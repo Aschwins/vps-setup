@@ -7,7 +7,7 @@ machine is ready to pull code and run containers within minutes.
 ## What the script does
 - Updates apt package metadata
 - Installs Git
-- Installs Docker Engine (`docker.io`) and the Docker Compose plugin
+- Installs Docker Engine from Docker's official apt repository (Engine, CLI, containerd, Buildx, Compose plugin)
 - Enables and starts the Docker service
 - Adds the invoking sudo user to the `docker` group (so Docker can run without sudo)
 - Installs the GitHub CLI (`gh`) via the official apt repository
@@ -22,7 +22,7 @@ machine is ready to pull code and run containers within minutes.
 
 ## Usage
 ```bash
-git clone https://github.com/Aschwins/vps-setup.git
+git clone https://github.com/<your-account>/vps-setup.git
 cd vps-setup
 chmod +x setup.sh   # one-time
 sudo ./setup.sh

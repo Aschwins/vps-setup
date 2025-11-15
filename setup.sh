@@ -30,12 +30,41 @@ install_package() {
 }
 
 install_package git
-install_package docker.io
-install_package docker-compose-plugin
+
+setup_docker() {
+  if command -v docker >/dev/null 2>&1; then
+    log "Docker already installed."
+    return
+  fi
+
+  log "Preparing Docker apt repository..."
+  install_package ca-certificates
+  install_package curl
+  $SUDO install -m 0755 -d /etc/apt/keyrings
+  $SUDO curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+  $SUDO chmod a+r /etc/apt/keyrings/docker.asc
+
+  local codename
+  codename=$(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}")
+  cat <<EOF | $SUDO tee /etc/apt/sources.list.d/docker.sources >/dev/null
+Types: deb
+URIs: https://download.docker.com/linux/ubuntu
+Suites: ${codename}
+Components: stable
+Signed-By: /etc/apt/keyrings/docker.asc
+EOF
+
+  log "Installing Docker Engine packages..."
+  $SUDO apt update
+  $SUDO apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+}
+
+setup_docker
 
 log "Enabling and starting Docker service..."
 $SUDO systemctl enable docker >/dev/null
 $SUDO systemctl start docker
+$SUDO systemctl status docker --no-pager || true
 
 setup_github_cli() {
   if command -v gh >/dev/null 2>&1; then
