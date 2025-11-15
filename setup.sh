@@ -122,17 +122,6 @@ configure_firewall() {
   fi
 }
 
-set_sshd_option() {
-  local file="$1"
-  local key="$2"
-  local value="$3"
-  if $SUDO grep -Eq "^[#[:space:]]*${key}[[:space:]]" "$file"; then
-    $SUDO sed -i "s/^[#[:space:]]*${key}.*/${key} ${value}/" "$file"
-  else
-    echo "${key} ${value}" | $SUDO tee -a "$file" >/dev/null
-  fi
-}
-
 harden_ssh() {
   local sshd_config="/etc/ssh/sshd_config"
   if [ ! -f "$sshd_config" ]; then
@@ -140,19 +129,27 @@ harden_ssh() {
     return
   fi
 
-  local backup="${sshd_config}.pre-vps-setup"
-  if [ ! -f "$backup" ]; then
-    log "Backing up SSH configuration to $backup"
-    $SUDO cp "$sshd_config" "$backup"
+  local include_dir="/etc/ssh/sshd_config.d"
+  local custom_config="$include_dir/99-vps-setup.conf"
+
+  if [ ! -f "${sshd_config}.pre-vps-setup" ]; then
+    log "Backing up SSH configuration to ${sshd_config}.pre-vps-setup"
+    $SUDO cp "$sshd_config" "${sshd_config}.pre-vps-setup"
   fi
 
-  set_sshd_option "$sshd_config" "PasswordAuthentication" "no"
-  set_sshd_option "$sshd_config" "PermitRootLogin" "no"
-  set_sshd_option "$sshd_config" "ChallengeResponseAuthentication" "no"
-  set_sshd_option "$sshd_config" "X11Forwarding" "no"
-  set_sshd_option "$sshd_config" "UsePAM" "yes"
-  set_sshd_option "$sshd_config" "ClientAliveInterval" "300"
-  set_sshd_option "$sshd_config" "ClientAliveCountMax" "2"
+  $SUDO mkdir -p "$include_dir"
+  cat <<'EOF' | $SUDO tee "$custom_config" >/dev/null
+PasswordAuthentication no
+PermitRootLogin no
+ChallengeResponseAuthentication no
+X11Forwarding no
+UsePAM yes
+ClientAliveInterval 300
+ClientAliveCountMax 2
+EOF
+
+  log "Validating SSH configuration..."
+  $SUDO sshd -t
 
   log "Reloading SSH daemon with hardened settings..."
   if ! $SUDO systemctl reload ssh >/dev/null 2>&1; then

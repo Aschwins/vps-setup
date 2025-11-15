@@ -12,7 +12,7 @@ machine is ready to pull code and run containers within minutes.
 - Adds the invoking sudo user to the `docker` group (so Docker can run without sudo)
 - Installs the GitHub CLI (`gh`) via the official apt repository
 - Installs and enables UFW with sane defaults (deny incoming, allow outgoing) while allowing SSH/HTTP/HTTPS
-- Hardens SSH by disabling root/password logins and enforcing keep-alive settings
+- Hardens SSH by installing a drop-in config (`/etc/ssh/sshd_config.d/99-vps-setup.conf`) that disables root/password logins and enforces keep-alive settings
 
 ## Requirements
 - Debian/Ubuntu based distribution with `apt`
