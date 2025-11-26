@@ -39,3 +39,17 @@ settings with `sudo sshd -T`. Check the reverse proxy setup with
 `sudo nginx -t` and `systemctl status nginx` (or `curl -H "Host: improvlib.com" http://127.0.0.1`)
 while the `improvlib_app` container publishes port `8000`. Ensure you have an
 alternate console or active SSH session before hardening SSH in case you need to revert.
+
+## Smoke test in Docker
+Prereq: Docker available on your workstation. This starts a privileged Ubuntu
+container with systemd to exercise `setup.sh` end-to-end.
+
+```bash
+./tests/smoke-test.sh
+```
+
+Run with `--help` to see all available environment variables. Useful options:
+- `KEEP_CONTAINER=1` to leave the container running for inspection
+- `VERBOSE=1` to show all command output
+- `SMOKE_IMAGE=ubuntu:24.04` to test on a different base image
+- `SMOKE_TIMEOUT=600` to adjust the maximum test duration
