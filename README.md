@@ -13,12 +13,14 @@ machine is ready to pull code and run containers within minutes.
 - Installs the GitHub CLI (`gh`) via the official apt repository
 - Installs and enables UFW with sane defaults (deny incoming, allow outgoing) while allowing SSH/HTTP/HTTPS
 - Installs Nginx and configures `improvlib.com` (and `www`) to proxy inbound HTTP traffic to the `improvlib_app` container published on localhost port `8000`
+- Optionally provisions a Let's Encrypt certificate with certbot's Nginx plugin (when `CERTBOT_EMAIL` is set) and configures HTTPS with automatic renewal
 - Hardens SSH by installing a drop-in config (`/etc/ssh/sshd_config.d/99-vps-setup.conf`) that disables root/password logins and enforces keep-alive settings
 
 ## Requirements
 - Debian/Ubuntu based distribution with `apt`
 - Run as root or through `sudo`
 - Network access to fetch the GitHub CLI repository key and package
+- DNS A/AAAA records for your domain pointing at this VPS if you want certbot to issue a certificate
 - SSH key-based access already configured (password logins are disabled by the script)
 
 ## Usage
@@ -26,8 +28,15 @@ machine is ready to pull code and run containers within minutes.
 git clone https://github.com/<your-account>/vps-setup.git
 cd vps-setup
 chmod +x setup.sh   # one-time
-sudo ./setup.sh
+CERTBOT_EMAIL=admin@example.com sudo ./setup.sh
 ```
+
+Environment overrides:
+- `NGINX_DOMAIN` (default: `improvlib.com`)
+- `NGINX_BACKEND_PORT` (default: `8000`)
+- `NGINX_CONTAINER_NAME` (default: `improvlib_app`)
+- `CERTBOT_EMAIL` (required to request a certificate; skip HTTPS provisioning if unset)
+- `SKIP_CERTBOT=1` to bypass certificate handling
 
 If your user was added to the `docker` group, log out and back in (or reboot) to
 pick up the new permissions.
@@ -37,8 +46,10 @@ After the script finishes, run `gh auth login` to authenticate the GitHub CLI.
 You can verify the firewall status with `sudo ufw status` and review SSH daemon
 settings with `sudo sshd -T`. Check the reverse proxy setup with
 `sudo nginx -t` and `systemctl status nginx` (or `curl -H "Host: improvlib.com" http://127.0.0.1`)
-while the `improvlib_app` container publishes port `8000`. Ensure you have an
-alternate console or active SSH session before hardening SSH in case you need to revert.
+while the `improvlib_app` container publishes port `8000`. For HTTPS, confirm
+`sudo systemctl list-timers --all | grep certbot` shows a renewal timer and
+`sudo certbot renew --dry-run` succeeds. Ensure you have an alternate console or
+active SSH session before hardening SSH in case you need to revert.
 
 ## Smoke test in Docker
 Prereq: Docker available on your workstation. This starts a privileged Ubuntu

@@ -22,6 +22,7 @@ ensure_docker_service
 setup_github_cli
 configure_firewall
 configure_nginx_reverse_proxy
+provision_https_certificate
 harden_ssh
 ensure_user_in_docker_group
 
