@@ -5,10 +5,14 @@ configure_nginx_reverse_proxy() {
   local domain="${NGINX_DOMAIN:-improvlib.com}"
   local backend_port="${NGINX_BACKEND_PORT:-8000}"
   local container_name="${NGINX_CONTAINER_NAME:-improvlib_app}"
+  local media_path="${NGINX_MEDIA_PATH:-/var/www/${domain}/media}"
   local site_available="/etc/nginx/sites-available/${domain}"
   local site_enabled="/etc/nginx/sites-enabled/${domain}"
 
   install_package nginx
+
+  log "Ensuring media directory exists at ${media_path} for Nginx alias..."
+  $SUDO mkdir -p "$media_path"
 
   log "Writing Nginx config for ${domain}..."
   cat <<EOF | $SUDO tee "$site_available" >/dev/null
@@ -27,6 +31,14 @@ server {
     proxy_set_header X-Forwarded-Proto \$scheme;
     proxy_set_header Upgrade \$http_upgrade;
     proxy_set_header Connection "upgrade";
+  }
+
+  location /media/ {
+    # Serve user-uploaded media files from the host filesystem shared with the app container.
+    alias ${media_path%/}/;
+    try_files \$uri \$uri/ =404;
+    access_log off;
+    add_header Cache-Control "private, no-store";
   }
 }
 EOF
